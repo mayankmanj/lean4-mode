@@ -60,5 +60,64 @@ First try to find an executable named `lean4-executable-name' in
   (when lean4-delete-trailing-whitespace
       (delete-trailing-whitespace)))
 
+(defun lean4-in-comment-p ()
+  "Return t if a current point is inside of comment block.  Return nil otherwise."
+  (nth 4 (syntax-ppss)))
+
+;; The following function is a slightly modified version of
+;; f--collect-entries written by Johan Andersson
+;; The URL is at https://github.com/rejeep/f.el/blob/master/f.el#L416-L435
+(defun lean4--collect-entries (path recursive)
+  "Find all files in PATH.  If RECURSIVE, then descend into subfolders.
+This is a modified version of `f--collect-entries' that waits for 0.0001s before
+descending into subfolders.  This allows `wait-timeout' function to check the
+timer and kill the execution of this function."
+  (let (result
+        (entries
+         (-reject
+          (lambda (file)
+            (or
+             (equal (f-filename file) ".")
+             (equal (f-filename file) "..")))
+          (directory-files path t))))
+    ;; The following line is the only modification that I made
+    ;; It waits 0.0001 second for an event. This wait allows
+    ;; wait-timeout function to check the timer and kill the execution
+    ;; of this function.
+    (sit-for 0.0001)
+    (cond (recursive
+           (mapc
+            (lambda (entry)
+              (if (f-file? entry)
+                  (setq result (cons entry result))
+                (when (f-directory? entry)
+                  (setq result (cons entry result))
+                  (setq result (append result (lean4--collect-entries entry recursive))))))
+            entries))
+          (t (setq result entries)))
+    result))
+
+;; The following function is a slightly modified version of
+;; f-files function written by Johan Andersson The URL is at
+;; https://github.com/rejeep/f.el/blob/master/f.el#L478-L481
+(defun lean4-find-files (path &optional fn recursive)
+  "Find all files in PATH.
+Optionally filter files satisfying predicate FN and/or use RECURSIVE search."
+  ;; It calls lean4--collect-entries instead of f--collect-entries
+  (let ((files (-select 'f-file? (lean4--collect-entries path recursive))))
+    (if fn (-select fn files) files)))
+
+(defmacro lean4-with-uri-buffers (server uri &rest body)
+  (declare (indent 2))
+  `(dolist (buf (eglot--managed-buffers ,server))
+     (when (buffer-live-p buf)
+       (with-current-buffer buf
+         (when (and buffer-file-name
+                    (string= buffer-file-truename
+                             (abbreviate-file-name
+                              (file-truename
+                               (eglot-uri-to-path ,uri)))))
+           ,@body)))))
+
 (provide 'lean4-util)
 ;;; lean4-util.el ends here
