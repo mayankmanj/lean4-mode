@@ -116,7 +116,7 @@ Optionally filter files satisfying predicate FN and/or use RECURSIVE search."
                     (string= buffer-file-truename
                              (abbreviate-file-name
                               (file-truename
-                               (eglot-uri-to-path ,uri)))))
+                               (eglot--uri-to-path ,uri)))))
            ,@body)))))
 
 (provide 'lean4-util)
