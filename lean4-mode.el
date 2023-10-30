@@ -70,7 +70,7 @@
 
 (declare-function lean-mode "ext:lean-mode")
 (declare-function flymake-proc-init-create-temp-buffer-copy "flymake-proc")
-(declare-function lean-mode "ext:lean-mode")
+(declare-function flymake-goto-next-error "flymake")
 (declare-function quail-show-key "quail")
 
 (defun lean4-compile-string (lake-name exe-name args file-name)
@@ -252,6 +252,9 @@ This will allow us to use Emacs when a repo contains multiple lean packages."
   (setq-local flymake-no-changes-timeout nil)
   (setq-local flymake-start-on-flymake-mode nil)
   (setq-local flymake-start-on-save-buffer nil)
+  ;; Let the `next-error' and `previous-error' commands navigate
+  ;; diagnostics.
+  (setq-local next-error-function 'flymake-goto-next-error)
   (lean4-set-keys)
   (if (fboundp 'electric-indent-local-mode)
       (electric-indent-local-mode -1))
