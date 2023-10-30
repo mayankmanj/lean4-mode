@@ -126,7 +126,7 @@ file, recompiling, and reloading all imports."
 
 (defun lean4-indent-line ()
   "Lean 4 indent line function.
-If point is at the end of the current indentation, use `lean4-eri-indent`;
+If point is at the end of the current indentation, use `lean4-eri-indent';
 or if point is before that position, move it there; or do nothing, to allow
 tab completion (if configured)."
   (let ((cur-column (current-column))
@@ -171,7 +171,7 @@ tab completion (if configured)."
     ["Customize lean4-mode" (customize-group 'lean) t]))
 
 (defvar lean4-idle-hook nil
-  "Functions to run after Emacs has been idle for `lean4-idle-delay` seconds.
+  "Functions to run after Emacs has been idle for `lean4-idle-delay' seconds.
 The functions are run only once for each time Emacs becomes idle.")
 
 (defvar lean4--idle-timer nil)
@@ -225,21 +225,6 @@ This will allow us to use Emacs when a repo contains multiple lean packages."
 	(cons 'lake root)))))
 
 (push #'lean4-project-find project-find-functions)
-
-Starting from `(buffer-file-name)`, repeatedly look up the
-directory hierarchy for a directory containing a file
-\"lean-toolchain\", and use the last such directory found, if any.
-This allows us to edit files in child packages using the settings
-of the parent project."
-  (let (root)
-    (when-let ((file-name (buffer-file-name)))
-      (while-let ((dir (locate-dominating-file file-name "lean-toolchain")))
-        ;; We found a toolchain file, but maybe it belongs to a package.
-        ;; Continue looking until there are no more toolchain files.
-        (setq root dir
-              file-name (file-name-directory (directory-file-name dir)))))
-    (when root
-      (lsp-workspace-folders-add root))))
 
 ;;;###autoload
 (define-derived-mode lean4-mode prog-mode "Lean 4"
@@ -391,7 +376,7 @@ which item is which."
             #'lean4-mode--before--eglot-read-execute-code-action)
 
 (cl-defmethod eglot-execute :before ((_server lean4-eglot-lsp-server) action)
-  "Massage a `CodeAction` before Eglot handles it.
+  "Massage a `CodeAction' before Eglot handles it.
 If ACTION is a fully resolved `CodeAction' (that is, if it contains edits)
 and if any text document version number is zero, set it to nil to tell
 Eglot not to validate the version."
