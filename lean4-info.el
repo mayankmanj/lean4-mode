@@ -64,8 +64,11 @@
 Also choose settings used for the *Lean Goal* buffer."
   (unless (get-buffer buffer)
     (with-current-buffer (get-buffer-create buffer)
-      (buffer-disable-undo)
       (magit-section-mode)
+      (buffer-disable-undo)
+      (add-hook 'window-configuration-change-hook
+                #'lean4--idle-invalidate nil t)
+      (set-input-method "Lean")
       (set-syntax-table lean4-syntax-table)
       (setq buffer-read-only t))))
 
