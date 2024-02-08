@@ -47,6 +47,8 @@
   (set (make-local-variable 'lisp-indent-function)
        'common-lisp-indent-function))
 
+(declare-function lean4--idle-invalidate "lean4-mode")
+
 (defun lean4-ensure-info-buffer (buffer)
   "Create BUFFER if it does not exist.
 Also choose settings used for the *Lean Goal* buffer."
