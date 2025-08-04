@@ -37,7 +37,7 @@
 ;; Lean Info Mode (for "*lean4-info*" buffer)
 ;; Automode List
 ;;;###autoload
-(define-derived-mode lean4-info-mode prog-mode "Lean-Info"
+(define-derived-mode lean4-info-mode magit-section-mode "Lean-Info"
   "Major mode for Lean4-Mode Info Buffer."
   :syntax-table lean4-syntax-table
   :group 'lean4
@@ -54,7 +54,7 @@
 Also choose settings used for the *Lean Goal* buffer."
   (unless (get-buffer buffer)
     (with-current-buffer (get-buffer-create buffer)
-      (magit-section-mode)
+      (lean4-info-mode)
       (buffer-disable-undo)
       (add-hook 'window-configuration-change-hook
                 #'lean4--idle-invalidate nil t)
@@ -250,34 +250,77 @@ PS is a list of tag IDs."
   "Parse TYPE into propertized string.
 PS is a list of tag IDs."
   (let* ((tag (plist-get type :tag)))
-    (lean4-info-parse-tag tag ps)))
+    (lean4-info-parse-tag tag ps nil)))
 
-(defun lean4-info-parse-tag (tag ps)
+(defface lean4-will-change-dark-face
+  '((t :background "#47221F"))
+  "Dark Red")
+
+(defface lean4-was-changed-dark-face
+  '((t :background "#394127"))
+  "Dark Green")
+
+(defface lean4-will-change-light-face
+  '((t :background "#FBD6D3"))
+  "Light Red")
+
+(defface lean4-was-changed-light-face
+  '((t :background "#E9F2D2"))
+  "Light Green")
+
+(defun lean4--diff-face (diffstatus)
+  (let* ((lightp (eq (frame-parameter nil 'background-mode) 'light)))
+    (cond ((and (member diffstatus '("willChange" "willDelete"))
+                lightp)
+           'lean4-will-change-light-face)
+          ((and (member diffstatus '("wasChanged" "wasInserted"))
+                lightp)
+           'lean4-was-changed-light-face)
+          ((member diffstatus '("willChange" "willDelete"))
+           'lean4-will-change-dark-face)
+          (t
+           'lean4-was-changed-dark-face))))
+              
+(defun lean4--add-diffstatus (expr diffstatus)
+  (if diffstatus
+      (propertize expr 'font-lock-face (lean4--diff-face diffstatus))
+    expr))
+
+(defun lean4-info-parse-tag (tag ps &optional diffstatus)
   "Parse TAG into propertized string.
 PS is a list of tag IDs."
   (let* ((tag0 (aref tag 0))
          (info (plist-get tag0 :info))
          (p (plist-get info :p))
+         (newdiffstatus (plist-get tag0 :diffStatus))
+         (newdiffstatus (cond ((not diffstatus)
+                               newdiffstatus)
+                              ((not newdiffstatus)
+                               diffstatus)
+                              (t newdiffstatus)))
+                                
          (tag1 (aref tag 1)))
-    (lean4-info-parse-expr tag1 (cons p ps))))
+    (lean4-info-parse-expr tag1 (cons p ps) newdiffstatus)))
 
-(defun lean4-info-parse-expr (expr &optional ps)
+(defun lean4-info-parse-expr (expr &optional ps diffstatus)
   "Parse EXPR into propertized string.
 PS is a list of tag IDs."
   (cond
    ((equal (car expr) :text)
-    (if ps
-        (propertize (cadr expr) 'lean4-p ps)
-      (cadr expr)))
+    (lean4--add-diffstatus (if ps
+                               (propertize (cadr expr) 'lean4-p ps)
+                             (cadr expr))
+                           diffstatus))
    ((equal (car expr) :append)
     (mapconcat (lambda (item)
                  (cond
                   ((equal (car item) :text)
-                   (if ps
-                       (propertize (cadr item) 'lean4-p ps)
-                     (cadr item)))
+                   (lean4--add-diffstatus (if ps
+                                              (propertize (cadr item) 'lean4-p ps)
+                                            (cadr item))
+                                          diffstatus))
                   ((equal (car item) :tag)
-                   (lean4-info-parse-tag (cadr item) ps))))
+                   (lean4-info-parse-tag (cadr item) ps diffstatus))))
                (cadr expr)))))
 
 (defun lean4-info-buffer-refresh ()
