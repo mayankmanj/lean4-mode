@@ -92,7 +92,7 @@ The buffer is supposed to be the *Lean Goal* buffer."
 (defun lean4-info--diagnostics ()
   (nreverse
    (cl-loop for diag in (flymake-diagnostics)
-            when (cdr (assoc 'eglot-lsp-diag (eglot--diag-data diag)))
+            when (cdr (assoc 'eglot-lsp-diag (flymake-diagnostic-data diag)))
             collect it)))
 
 (defun lean4-info--diagnostic-start (diagnostic)
@@ -280,7 +280,7 @@ PS is a list of tag IDs."
            'lean4-will-change-dark-face)
           (t
            'lean4-was-changed-dark-face))))
-              
+
 (defun lean4--add-diffstatus (expr diffstatus)
   (if diffstatus
       (propertize expr 'font-lock-face (lean4--diff-face diffstatus))
@@ -298,7 +298,7 @@ PS is a list of tag IDs."
                               ((not newdiffstatus)
                                diffstatus)
                               (t newdiffstatus)))
-                                
+
          (tag1 (aref tag 1)))
     (lean4-info-parse-expr tag1 (cons p ps) newdiffstatus)))
 
